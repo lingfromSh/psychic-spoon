@@ -2,6 +2,5 @@ Deprecated==1.2.13
 orjson==3.6.6
 packaging==21.3
 pyparsing==3.0.7
-pytest==6.2.5
 redis==4.1.3
 wrapt==1.13.3

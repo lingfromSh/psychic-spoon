@@ -32,3 +32,21 @@ def test_string_type_mget(UserCache):
         key_mappings=[{"user_id": 1}, {"user_id": 2}, {"user_id": 3}]
     )
     assert users == {"user:1": "a", "user:2": "b", "user:3": "c"}
+
+
+def test_string_type_add(UserCache):
+    UserCache.add(key_mapping={"user_id": 4}, data="d")
+    UserCache.add(key_mapping={"user_id": 5}, data="e")
+    UserCache.bulk_add(
+        mappings=[
+            {"key_mapping": {"user_id": 6}, "data": "f"},
+            {"key_mapping": {"user_id": 7}, "data": "g"},
+            {"key_mapping": {"user_id": 8}, "data": "h"},
+        ]
+    )
+
+    assert UserCache.get(user_id=4) == "d"
+    assert UserCache.get(user_id=5) == "e"
+    assert UserCache.get(user_id=6) == "f"
+    assert UserCache.get(user_id=7) == "g"
+    assert UserCache.get(user_id=8) == "h"

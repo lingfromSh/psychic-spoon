@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import AnyStr, Callable, Dict, List, Union
+from typing import Any, AnyStr, Callable, Dict, List, TypedDict, Union
 
+from .backend import Backend
 from .types.base import Type
 
+PyType = str
 
-class DefaultTTL:
-    pass
+Mapping = TypedDict("Mapping", key_mapping=dict, data=PyType)
+
+
+default_ttl = timedelta(minutes=1)
 
 
 class Key:
@@ -15,7 +19,8 @@ class Key:
         self,
         name: Union[str, Callable],
         data_type: Type,
-        ttl: timedelta = DefaultTTL,
+        backend: Backend = None,
+        ttl: timedelta = default_ttl,
         fail_callback: List[Callable] = None,
         success_callback: List[Callable] = None,
     ):
@@ -30,7 +35,7 @@ class Key:
         assert isinstance(name, str) or callable(name), "name must be str or Callable."
         assert isinstance(data_type, Type), "data_type must be subclass of Type."
         assert (
-            isinstance(ttl, timedelta) or ttl is DefaultTTL
+            isinstance(ttl, timedelta) or ttl is default_ttl
         ), "ttl must be type of timedelta."
         assert (
             fail_callback is None
@@ -65,11 +70,20 @@ class Key:
             *[self.build_key(**key_mapping) for key_mapping in key_mappings]
         )
 
-    def add(self, mapping: dict) -> bool:
-        ...
+    def add(self, *, key_mapping: dict, data: Any) -> bool:
+        return self.data_type.add(
+            key=self.build_key(**key_mapping), data=data, ttl=self.ttl
+        )
 
-    def save(self, data, ttl: int = None) -> bool:
-        ...
+    def bulk_add(self, *, mappings: List[Mapping]) -> bool:
+        return self.data_type.bulk_add(
+            {
+                self.build_key(**mapping["key_mapping"]): mapping["data"]
+                for mapping in mappings
+            }
+        )
 
-    def delete(self) -> bool:
-        ...
+    def delete(self, *key_mappings: List[Dict[str, AnyStr]]) -> bool:
+        return self.data_type.delete(
+            *[self.build_key(**key_mapping) for key_mapping in key_mappings]
+        )

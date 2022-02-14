@@ -55,11 +55,8 @@ jobs:
       - name: Setup branch
         uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Install pytest, pytest-coverage
-        run: pip install pytest pytest-coverage
+      - name: Install test dependencies
+        run: pip install -r requirements/test.txt
 
       - name: Run tests
         run: pytest --cov .

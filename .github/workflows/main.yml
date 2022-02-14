@@ -16,33 +16,33 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  test:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
-    
+
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Setup Redis
         # You may pin to the exact commit or the version.
         # uses: zhulik/redis-action@765216a54a1114f109ce90a1de4775080be16ea5
         uses: zhulik/redis-action@1.1.0
-        
+
       - name: Setup Python
         uses: actions/setup-python@v2.3.2
         with:
           # Version range or exact version of a Python version to use, using SemVer's version range syntax.
           python-version: 3.8
-          
+
       - name: Setup branch
         uses: actions/checkout@v2
-        
+
       - name: Install dependencies
         run: pip install -r requirements.txt
-        
+
       - name: Install pytest, pytest-coverage
         run: pip install pytest pytest-coverage
-        
+
       - name: Run tests
         run: pytest --cov .

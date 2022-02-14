@@ -1,19 +1,31 @@
-from decimal import Decimal
+from decimal import Decimal as PyDecimal
 
 from .string import String
 
 
 class Number(String):
-    PyType = (int, float, Decimal)
+    PyType = NotImplemented
 
-    def serialize(self, data: PyType) -> str:
+    def serialize(self, data) -> str:
         return str(data)
 
     def deserialize(self, raw) -> PyType:
-        for type_ in self.PyType:
-            try:
-                return type_(raw)
-            except TypeError:
-                pass
+        return self.PyType(raw)
 
-        raise TypeError(f"Expected type in {self.PyType}, but got {raw}.")
+
+class Integer(Number):
+    PyType = int
+
+
+class Float(Number):
+    PyType = float
+
+
+class Decimal(Number):
+    PyType = PyDecimal
+
+    def serialize(self, data) -> str:
+        return data.to_eng_string()
+
+    def deserialize(self, raw) -> PyType:
+        return PyDecimal(raw)

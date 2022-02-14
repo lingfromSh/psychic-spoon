@@ -82,19 +82,14 @@ def test_dict_type_add(redis_client, fixture):
     )
 
     assert [
-               json.loads(item)
-               for item in redis_client.mget(keys=[f"user:{i}" for i in range(6, 9)])
-           ] == [random_user] * 3
+        json.loads(item)
+        for item in redis_client.mget(keys=[f"user:{i}" for i in range(6, 9)])
+    ] == [random_user] * 3
 
 
 def test_dict_type_delete(redis_client, fixture):
     UserCache = fixture[0]
 
-    UserCache.delete(*[
-        {
-            "user_id": i
-        }
-        for i in range(1, 9)
-    ])
+    UserCache.delete(*[{"user_id": i} for i in range(1, 9)])
 
     assert len(redis_client.keys("user:")) == 0

@@ -15,8 +15,23 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  test:
+  flake8:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v2.3.2
+        with:
+          # Version range or exact version of a Python version to use, using SemVer's version range syntax.
+          python-version: 3.8
+
+      - name: Setup branch
+        uses: actions/checkout@v2
+
+      - name: Install flake8
+        run: pip install flake8
+
+  tests:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 

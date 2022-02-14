@@ -9,6 +9,10 @@ except ImportError:
 class JSON(String):
     PyType = dict
 
+    def __init__(self, fields=None, backend=None):
+        super().__init__(backend=backend)
+        self.fields = fields
+
     def serialize(self, data) -> str:
         return dumps(data)
 

@@ -31,6 +31,8 @@ jobs:
       - name: Install flake8
         run: pip install flake8
 
+      - name: Run flake8
+        run: flake8 .
   tests:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest

@@ -50,3 +50,11 @@ def test_string_type_add(UserCache):
     assert UserCache.get(user_id=6) == "f"
     assert UserCache.get(user_id=7) == "g"
     assert UserCache.get(user_id=8) == "h"
+
+
+def test_string_type_delete(UserCache):
+    UserCache.delete(*[dict(user_id=i) for i in range(1, 9)])
+
+    assert UserCache.mget(key_mappings=[dict(user_id=i) for i in range(1, 9)]) == {
+        f"user:{i}": None for i in range(1, 9)
+    }

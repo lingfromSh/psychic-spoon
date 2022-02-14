@@ -31,7 +31,10 @@ class Backend:
         return self.client.mset(mapping)
 
     def get(self, *keys) -> Mapping:
-        return {key: data.decode() for key, data in zip(keys, self.client.mget(keys))}
+        return {
+            key: data.decode() if data else data
+            for key, data in zip(keys, self.client.mget(keys))
+        }
 
     def __getattribute__(self, name):
         try:

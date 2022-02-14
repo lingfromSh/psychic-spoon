@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Dict
 
 from ..backend import Backend
@@ -25,11 +26,13 @@ class Type:
             key: self.deserialize(data) for key, data in self.backend.get(*keys).items()
         }
 
-    def add(self, key, data, ttl: int = None) -> bool:
-        return self.backend.add(key, data, ttl)
+    def add(self, key, data, ttl: timedelta = None) -> bool:
+        return self.backend.add(key, self.serialize(data), ttl)
 
     def bulk_add(self, mapping: Dict[str, PyType]) -> bool:
-        return self.backend.bulk_add(mapping)
+        return self.backend.bulk_add(
+            {key: self.serialize(data) for key, data in mapping.items()}
+        )
 
     def delete(self, *keys) -> bool:
         return self.backend.delete(*keys)

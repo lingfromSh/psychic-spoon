@@ -6,7 +6,7 @@ from .string import String
 class Number(String):
     PyType = (int, float, Decimal)
 
-    def serialize(self, data) -> str:
+    def serialize(self, data: PyType) -> str:
         return str(data)
 
     def deserialize(self, raw) -> PyType:

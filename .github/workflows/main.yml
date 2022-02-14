@@ -59,4 +59,4 @@ jobs:
         run: pip install -r requirements/test.txt
 
       - name: Run tests
-        run: pytest --cov .
+        run: pytest --cov src --pretty .

@@ -6,7 +6,7 @@ except ImportError:
     from json import dumps, loads
 
 
-class JSON(String):
+class Dict(String):
     PyType = dict
 
     def __init__(self, fields=None, backend=None):

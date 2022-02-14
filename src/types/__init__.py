@@ -1,2 +1,2 @@
-from .json import JSON  # NoQA
+from .dict import Dict  # NoQA
 from .string import String  # NoQA

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Union, Any, AnyStr, Callable, List, Dict
+from typing import Any, AnyStr, Callable, Dict, List, Union
 
 from .backends.base import Backend
 from .exceptions import KeyPatternError, TTLError, ValidationError
@@ -106,18 +106,3 @@ class Key:
 
     def delete(self, keys: List[AnyStr]) -> bool:
         return self.backend.delete(keys)
-
-
-if __name__ == "__main__":
-
-    def test():
-        from .types.string import String
-        from .backends.redis import RedisBackend
-
-        UserCache = Key(pattern="user:{id}", data_type=String(), backend=RedisBackend())
-        UserCache.get(id=1)
-        UserCache.get(id=2)
-        UserCache.get(id=3)
-        UserCache.get(id=4)
-
-    test()

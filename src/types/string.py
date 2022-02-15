@@ -4,8 +4,11 @@ from .base import Type
 class String(Type):
     PyType = str
 
-    def serialize(self, data) -> str:
-        return data
+    def validate(self, data: PyType) -> bool:
+        return isinstance(data, str)
 
-    def deserialize(self, raw) -> PyType:
-        return raw
+    @classmethod
+    def from_data(cls, data: PyType) -> type:
+        return type(cls.__name__, (cls,), {
+            "_data": data
+        })

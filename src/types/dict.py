@@ -9,12 +9,8 @@ except ImportError:
 class Dict(String):
     PyType = dict
 
-    def __init__(self, fields=None, backend=None):
-        super().__init__(backend=backend)
-        self.fields = fields
+    def __init__(self, **field_mapping):
+        self.field_mapping = field_mapping
 
-    def serialize(self, data) -> str:
-        return dumps(data)
-
-    def deserialize(self, raw) -> PyType:
-        return loads(raw)
+    def validate(self):
+        pass

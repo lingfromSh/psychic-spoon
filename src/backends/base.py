@@ -1,29 +1,23 @@
-from datetime import timedelta
-from typing import Any, AnyStr, List
-
-from ..types.base import Type
-from ..utils import multipledispatch
+from inspect import isfunction
+from types import MethodType
 
 
 class Backend:
-    @multipledispatch
-    def to_python(self, data_model, raw):
-        raise NotImplementedError("Must be implemented by its subclass.")
+    ModeMapping = {}
 
-    @multipledispatch
-    def to_db(self, data_model, data):
-        raise NotImplementedError("Must be implemented by its subclass.")
+    def __init__(self, mode=None):
+        self.mode = mode
 
-    def get(self, key: AnyStr, convert_type: Type = None):
-        raise NotImplementedError("must be implemented by its subclass.")
+    def set_mode(self, mode):
+        if isinstance(mode, type):
+            methods = self.ModeMapping[mode]
+        else:
+            methods = self.ModeMapping[mode.__class__]
+        print(methods.get)
+        self.update_methods(methods)
 
-    def mget(self, keys: List[AnyStr], convert_type: Type = None):
-        raise NotImplementedError("must be implemented by its subclass.")
-
-    def add(
-        self, key: AnyStr, data: Any, data_type: Type, ttl: timedelta = None
-    ) -> bool:
-        raise NotImplementedError("must be implemented by its subclass.")
-
-    def delete(self, keys: List[AnyStr]) -> bool:
-        raise NotImplementedError("must be implemented by its subclass.")
+    def update_methods(self, methods: object):
+        for name, attribute in methods.__dict__.items():
+            if not isfunction(attribute):
+                continue
+            setattr(self, name, MethodType(attribute, self))

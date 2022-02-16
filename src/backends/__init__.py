@@ -1,1 +1,1 @@
-from .redis import RedisBackend
+from .redis import RedisBackend  # NoQA

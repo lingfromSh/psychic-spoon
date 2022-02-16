@@ -91,8 +91,8 @@ class Key:
                 f"<Key pattern: {id(self.pattern)}> must be str or callable."
             )
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, name):
         try:
-            return object.__getattribute__(self, item)
+            return object.__getattribute__(self, name)
         except AttributeError:
-            return partial(getattr(self.data_type, item), self.backend)
+            return partial(getattr(self.data_type, name), self.backend)

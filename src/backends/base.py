@@ -1,4 +1,4 @@
-from inspect import isfunction
+from inspect import getmembers, isfunction
 from types import MethodType
 
 
@@ -13,11 +13,9 @@ class Backend:
             methods = self.ModeMapping[mode]
         else:
             methods = self.ModeMapping[mode.__class__]
-        print(methods.get)
         self.update_methods(methods)
 
     def update_methods(self, methods: object):
-        for name, attribute in methods.__dict__.items():
-            if not isfunction(attribute):
-                continue
+        for name, attribute in getmembers(methods, predicate=isfunction):
+            print(name, attribute)
             setattr(self, name, MethodType(attribute, self))

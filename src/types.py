@@ -1,38 +1,44 @@
 import decimal
 from datetime import timedelta
-from typing import Any, AnyStr, Dict, List
+from typing import Any, AnyStr, List
 
 
-class DataType:
+class BasicDataType:
     def activate(self, backend):
         backend.set_mode(self)
 
-
-class String(DataType):
-    def get(self, backend, key: AnyStr) -> str:
-        print(self)
-        return backend.get(key)
+    def get(self, backend, key: AnyStr) -> set:
+        return self.to_python(backend.get(key))
 
     def mget(self, backend, keys: List[AnyStr]) -> str:
-        return {key: data for key, data in zip(keys, backend.mget(*keys))}
+        return {
+            key: self.to_python(data) for key, data in zip(keys, backend.mget(*keys))
+        }
 
+    def to_raw(self, data):
+        raise NotImplementedError("Must be implemented by its subclass.")
+
+    def to_python(self, data):
+        raise NotImplementedError("Must be implemented by its subclass.")
+
+
+class String(BasicDataType):
     def add(self, backend, key: AnyStr, data: AnyStr, ttl: timedelta = None) -> bool:
         return backend.add(key, data, ttl=ttl)
 
     def delete(self, backend, *keys: AnyStr) -> bool:
         return backend.delete(*keys)
 
+    def to_raw(self, data):
+        return str(data)
 
-class Number(DataType):
-    def get(self, backend, key: AnyStr) -> Any:
-        return backend.get(key)
+    def to_python(self, data):
+        return data
 
-    def mget(self, backend, keys: List[AnyStr]) -> Dict[AnyStr, Any]:
-        return {key: data for key, data in zip(keys, backend.mget(*keys))}
 
+class Number(BasicDataType):
     def add(self, backend, key: AnyStr, data: Any, ttl: timedelta = None) -> bool:
-        print(dir(backend))
-        return backend.add(key, data, ttl=ttl)
+        return backend.add(key, self.to_raw(data), ttl=ttl)
 
     def delete(self, backend, *keys: AnyStr) -> bool:
         return backend.delete(*keys)
@@ -45,65 +51,79 @@ class Number(DataType):
 
 
 class Integer(Number):
-    def plus(self, backend, key: AnyStr, value: int) -> bool:
-        return backend.plus(key, value)
+    def to_raw(self, data):
+        if isinstance(data, int):
+            return data
+        return int(data)
 
-    def subtract(self, backend, key: AnyStr, value: int) -> bool:
-        return backend.subtract(key, value)
+    def to_python(self, data):
+        return int(data)
 
 
 class Float(Number):
-    def plus(self, backend, key: AnyStr, value: float) -> bool:
-        return backend.plus(key, value)
+    def to_raw(self, data):
+        if isinstance(data, float):
+            return data
+        return float(data)
 
-    def subtract(self, backend, key: AnyStr, value: float) -> bool:
-        return backend.subtract(key, value)
+    def to_python(self, data):
+        return float(data)
 
 
 class Decimal(Number):
-    def plus(self, backend, key: AnyStr, value: decimal.Decimal) -> bool:
-        return backend.plus(key, value)
+    def to_raw(self, data):
+        if not isinstance(data, decimal.Decimal):
+            return data
+        return str(data)
 
-    def subtract(self, backend, key: AnyStr, value: decimal.Decimal) -> bool:
-        return backend.subtract(key, value)
+    def to_python(self, data):
+        return decimal.Decimal(data)
 
 
-class Boolean(DataType):
-    def get(self, backend, key: AnyStr) -> bool:
-        return backend.get(key)
-
-    def mget(self, backend, keys: List[AnyStr]) -> Dict[AnyStr, bool]:
-        return {key: data for key, data in zip(keys, backend.mget(*keys))}
-
+class Boolean(BasicDataType):
     def add(self, backend, key: AnyStr, data: bool, ttl: timedelta = None) -> bool:
-        return backend.add(key, data, ttl=ttl)
+        return backend.add(key, self.to_raw(data), ttl=ttl)
 
     def delete(self, backend, *keys: AnyStr) -> bool:
         return backend.delete(*keys)
 
+    def to_raw(self, data):
+        if isinstance(data, bool):
+            return str(data)
+        return data
 
-# class Set(DataType):
-#
-#     def get(self, backend, key: AnyStr) -> set:
-#         return backend.get(key)
-#
-#     def mget(self, backend, keys: List[AnyStr]) -> Dict[AnyStr, set]:
-#         return {key: data for key, data in zip(keys, backend.mget(*keys))}
-#
-#     def set(self, backend, key: AnyStr, data: set, ttl: timedelta = None) -> bool:
-#         return backend.set(key, data, ttl=ttl)
-#
-#     def add(self, backend, key: AnyStr, data: set) -> bool:
-#         return backend.add(key, data)
-#
-#     def delete(self, backend, *keys: AnyStr) -> bool:
-#         return backend.delete(*keys)
-#
-#     def pop(self, backend, key: AnyStr, data: set) -> set:
-#         return backend.pop(key, data)
-#
-#     def union(self, backend, *keys) -> set:
-#         return backend.union(*keys)
-#
-#     def intersection(self, backend, *keys) -> set:
-#         return backend.intersection(*keys)
+    def to_python(self, data):
+        return eval(data)
+
+
+class ContainerDataType(BasicDataType):
+    def __init__(self, base_data_type: BasicDataType):
+        if not isinstance(base_data_type, BasicDataType):
+            raise ValueError("base_data_type must be type of BasicDataType.")
+        self.base_data_type = base_data_type
+
+    def to_raw(self, data):
+        return {self.base_data_type.to_raw(item) for item in data}
+
+    def to_python(self, data):
+        return {self.base_data_type.to_python(item) for item in data}
+
+
+class Set(ContainerDataType):
+    def add(self, backend, key: AnyStr, data: set) -> bool:
+        return backend.add(key, data)
+
+    def set(self, backend, key: AnyStr, data: set, ttl: timedelta = None) -> bool:
+        return backend.set(key, data, ttl=ttl)
+
+    def delete(self, backend, *keys: AnyStr) -> bool:
+        return backend.delete(*keys)
+
+    def pop(self, backend, key: AnyStr, data: set) -> set:
+        return backend.pop(key, data)
+
+    def union(self, backend, *keys) -> set:
+        return self.to_python(backend.union(*keys))
+
+    def intersection(self, backend, *keys) -> set:
+        return self.to_python(backend.intersection(*keys))

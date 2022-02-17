@@ -6,7 +6,7 @@ from typing import AnyStr, Callable, List, Union
 
 from .backends.base import Backend
 from .exceptions import KeyPatternError, TTLError
-from .types import DataType
+from .types import BasicDataType
 
 default_ttl = timedelta(minutes=1)
 
@@ -15,7 +15,7 @@ class Key:
     def __init__(
         self,
         pattern: Union[AnyStr, Callable],
-        data_type: DataType,
+        data_type: BasicDataType,
         backend: Backend = None,
         ttl: timedelta = default_ttl,
         on_add_fail_callback_list: List[Callable] = None,
@@ -37,8 +37,8 @@ class Key:
             raise KeyPatternError("pattern must be str or callable.")
         self.pattern = pattern
 
-        if not isinstance(data_type, DataType):
-            raise ValueError("data_type must be type of DataType.")
+        if not isinstance(data_type, BasicDataType):
+            raise ValueError("data_type must be type of BasicDataType.")
         self.data_type = data_type
 
         if not isinstance(backend, Backend):

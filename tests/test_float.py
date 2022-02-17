@@ -58,7 +58,7 @@ def test_float_type_add(redis_client, score_of_user_cache):
     key = score_of_user_cache.build_key(user_id=1)
     score_of_user_cache.add(key=key, data=1, ttl=timedelta(seconds=5))
 
-    assert redis_client.get("user:1:score").decode() == "1"
+    assert redis_client.get("user:1:score").decode() == "1.0"
     time.sleep(6)  # wait for ttl
     assert redis_client.get("user:1:score") is None
 

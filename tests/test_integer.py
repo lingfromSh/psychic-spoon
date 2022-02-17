@@ -35,9 +35,7 @@ def test_integer_type_mget(redis_client, login_count_of_user_cache):
         redis_client.set(f"user:{i + 1}:login:count", f"{i + 1}")
 
     keys = [login_count_of_user_cache.build_key(user_id=i + 1) for i in range(100)]
-    assert login_count_of_user_cache.mget(keys=keys) == {
-        f"user:{i + 1}:login:count": i + 1 for i in range(100)
-    }
+    assert login_count_of_user_cache.mget(*keys) == [i + 1 for i in range(100)]
 
 
 def test_integer_type_delete(redis_client, login_count_of_user_cache):
@@ -56,7 +54,7 @@ def test_integer_type_delete(redis_client, login_count_of_user_cache):
 
 def test_integer_type_add(redis_client, login_count_of_user_cache):
     key = login_count_of_user_cache.build_key(user_id=1)
-    login_count_of_user_cache.add(key=key, data=1, ttl=timedelta(seconds=5))
+    login_count_of_user_cache.set(key=key, value=1, ttl=timedelta(seconds=5))
 
     assert redis_client.get("user:1:login:count").decode() == "1"
     time.sleep(6)  # wait for ttl
@@ -65,7 +63,7 @@ def test_integer_type_add(redis_client, login_count_of_user_cache):
 
 def test_integer_type_plus(redis_client, login_count_of_user_cache):
     key = login_count_of_user_cache.build_key(user_id=1)
-    login_count_of_user_cache.add(key=key, data=1)
+    login_count_of_user_cache.set(key=key, value=1)
 
     assert redis_client.get("user:1:login:count").decode() == "1"
     login_count_of_user_cache.plus(key, 10)
@@ -74,7 +72,7 @@ def test_integer_type_plus(redis_client, login_count_of_user_cache):
 
 def test_integer_type_subtract(redis_client, login_count_of_user_cache):
     key = login_count_of_user_cache.build_key(user_id=1)
-    login_count_of_user_cache.add(key=key, data=1)
+    login_count_of_user_cache.set(key=key, value=1)
 
     assert redis_client.get("user:1:login:count").decode() == "1"
     login_count_of_user_cache.subtract(key, 10)

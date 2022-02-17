@@ -35,9 +35,7 @@ def test_boolean_type_mget(redis_client, name_of_user_cache):
         redis_client.set(f"user:{i + 1}:is_active", "True")
 
     keys = [name_of_user_cache.build_key(user_id=i + 1) for i in range(100)]
-    assert name_of_user_cache.mget(keys=keys) == {
-        f"user:{i + 1}:is_active": True for i in range(100)
-    }
+    assert name_of_user_cache.mget(*keys) == [True for i in range(100)]
 
 
 def test_boolean_type_delete(redis_client, name_of_user_cache):
@@ -54,9 +52,9 @@ def test_boolean_type_delete(redis_client, name_of_user_cache):
     assert redis_client.exists(*raw_keys) == 0
 
 
-def test_boolean_type_add(redis_client, name_of_user_cache):
+def test_boolean_type_set(redis_client, name_of_user_cache):
     key = name_of_user_cache.build_key(user_id=1)
-    name_of_user_cache.add(key=key, data=False, ttl=timedelta(seconds=5))
+    name_of_user_cache.set(key=key, value=False, ttl=timedelta(seconds=5))
 
     assert redis_client.get("user:1:is_active").decode() == "False"
     time.sleep(6)  # wait for ttl

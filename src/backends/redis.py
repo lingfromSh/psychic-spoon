@@ -1,129 +1,131 @@
-import decimal
 from datetime import timedelta
-from typing import AnyStr, List, Union
+from inspect import getmembers, isfunction
+from types import MethodType
+from typing import List as TypingList
 
 from redis import StrictRedis
 
-from ..types import Boolean, Decimal, Float, Integer, Set, String
+from ..types import Boolean, Dict, Float, Integer, List, Set, String
 from .base import Backend
 
 
-class RedisStringMixin:
-    def get(self, key: AnyStr) -> AnyStr:
-        return self.redis_client.get(key).decode()
+class RedisBackend(Backend):
+    __registry__ = {}
 
-    def mget(self, *keys: AnyStr) -> List[AnyStr]:
-        return [data.decode() for data in self.redis_client.mget(keys)]
+    def __init__(self, host, port, db, password=None):
+        super(RedisBackend, self).__init__()
+        self.redis_client = StrictRedis(host=host, port=port, db=db, password=password)
 
-    def add(self, key: AnyStr, data: AnyStr, ttl: timedelta = None) -> bool:
-        return self.redis_client.set(name=key, value=data, ex=ttl)
+    def __init_subclass__(cls, **kwargs):
+        RedisBackend.__registry__.update({kwargs["mode"]: cls})
 
-    def delete(self, *keys: AnyStr) -> bool:
-        return bool(self.redis_client.delete(*keys))
+    def get(self, key) -> str:
+        return self.data_type.deserialize(self.redis_client.get(key).decode())
+
+    def mget(self, *keys) -> TypingList[str]:
+        return [
+            self.data_type.deserialize(item.decode())
+            for item in self.redis_client.mget(keys)
+        ]
+
+    def set(self, key, value, ttl: timedelta = None) -> bool:
+        return self.redis_client.set(key, self.data_type.serialize(value), ex=ttl)
+
+    def delete(self, *keys) -> bool:
+        return self.redis_client.delete(*keys) == len(keys)
+
+    def expire(self, key, ttl: timedelta = None):
+        return self.redis_client.expire(key, time=ttl)
+
+    def ready_for(self, data_type):
+        super(RedisBackend, self).ready_for(data_type)
+        template = RedisBackend.__registry__[data_type.__class__]
+        for name, method in getmembers(template, predicate=isfunction):
+            setattr(self, name, MethodType(method, self))
 
 
-class RedisNumberMixin:
-    def add(
-        self,
-        key: AnyStr,
-        data: Union[int, float, decimal.Decimal],
-        ttl: timedelta = None,
-    ) -> bool:
-        return self.redis_client.set(name=key, value=str(data), ex=ttl)
-
-    def delete(self, *keys: AnyStr) -> bool:
-        return bool(self.redis_client.delete(*keys))
-
-    def get(self, key: AnyStr) -> int:
-        return self.redis_client.get(key).decode()
-
-    def mget(self, *keys: AnyStr) -> List[int]:
-        return [data.decode() for data in self.redis_client.mget(keys)]
+class RedisStringBackend(RedisBackend, mode=String):
+    ...
 
 
-class RedisIntegerMixin(RedisNumberMixin):
-    def plus(self, key: AnyStr, value: int) -> int:
+class RedisIntegerBackend(RedisBackend, mode=Integer):
+    def plus(self, key, value):
         return self.redis_client.incr(key, value)
 
-    def subtract(self, key: AnyStr, value: int) -> int:
+    def subtract(self, key, value):
         return self.redis_client.decr(key, value)
 
 
-class RedisFloatMixin(RedisNumberMixin):
-    def plus(self, key: AnyStr, value: float) -> float:
-        new_value = float(self.get(key)) + value
-        return self.add(key, data=new_value) and new_value
+class RedisFloatBackend(RedisBackend, mode=Float):
+    def plus(self, key, value):
+        return self.redis_client.incrbyfloat(key, value)
 
-    def subtract(self, key: AnyStr, value: float) -> float:
-        new_value = float(self.get(key)) - value
-        return self.add(key, data=new_value) and new_value
+    def subtract(self, key, value):
+        return self.redis_client.incrbyfloat(key, -value)
 
 
-class RedisDecimalMixin(RedisNumberMixin):
-    def plus(self, key: AnyStr, value: decimal.Decimal) -> decimal.Decimal:
-        new_value = decimal.Decimal(self.get(key)) + value
-        return self.add(key, data=new_value) and new_value
-
-    def subtract(self, key: AnyStr, value: decimal.Decimal) -> decimal.Decimal:
-        new_value = decimal.Decimal(self.get(key)) - value
-        return self.add(key, data=new_value) and new_value
+class RedisBooleanBackend(RedisBackend, mode=Boolean):
+    ...
 
 
-class RedisBooleanMixin:
-    def get(self, key: AnyStr) -> bool:
-        return self.redis_client.get(key).decode()
+class RedisListBackend(RedisBackend, mode=List):
+    def get(self, key) -> list:
+        return self.data_type.deserialize(
+            self.redis_client.lrange(key, start=0, end=-1)
+        )
 
-    def mget(self, *keys: AnyStr) -> List[bool]:
-        return [data.decode() for data in self.redis_client.mget(keys)]
+    def mget(self, *keys) -> TypingList:
+        return [
+            self.data_type.deserialize(self.redis_client.lrange(key, start=0, end=-1))
+            for key in keys
+        ]
 
-    def add(self, key: AnyStr, data: bool, ttl: timedelta = None) -> bool:
-        return self.redis_client.set(name=key, value=data, ex=ttl)
-
-    def delete(self, *keys: AnyStr) -> bool:
-        return bool(self.redis_client.delete(*keys))
-
-
-class RedisSetMixin:
-    def get(self, key: AnyStr) -> set:
-        return {item.decode() for item in self.redis_client.smembers(key)}
-
-    def mget(self, *keys: List[AnyStr]) -> List[set]:
-        return [self.redis_client.smembers(key) for key in keys]
-
-    def set(self, key: AnyStr, data: set, ttl: timedelta = None) -> bool:
-        resp = self.redis_client.sadd(key, *data)
+    def set(self, key, value, ttl: timedelta = None) -> bool:
+        if self.redis_client.exists(key):
+            self.redis_client.delete(key)
         if ttl:
-            resp = resp and self.redis_client.expire(key, ttl)
-        return resp
-
-    def add(self, key: AnyStr, data: set) -> bool:
-        return self.redis_client.sadd(key, *data)
-
-    def delete(self, *keys: AnyStr) -> bool:
-        return self.redis_client.delete(*keys)
-
-    def pop(self, key: AnyStr, data: set) -> set:
-        return self.redis_client.srem(key, *data)
-
-    def union(self, *keys) -> set:
-        print({item.decode() for item in self.redis_client.sunion(keys)})
-        return {item.decode() for item in self.redis_client.sunion(keys)}
-
-    def intersection(self, *keys) -> set:
-        print({item.decode() for item in self.redis_client.sinter(keys)})
-        return {item.decode() for item in self.redis_client.sinter(keys)}
+            self.redis_client.rpush(key, *self.data_type.serialize(value))
+            return self.redis_client.expire(key, time=ttl)
+        else:
+            return self.redis_client.rpush(
+                key, *self.data_type.serialize(value)
+            ) == len(value)
 
 
-class RedisBackend(Backend):
-    ModeMapping = {
-        String: RedisStringMixin,
-        Integer: RedisIntegerMixin,
-        Float: RedisFloatMixin,
-        Decimal: RedisDecimalMixin,
-        Boolean: RedisBooleanMixin,
-        Set: RedisSetMixin,
-    }
+class RedisSetBackend(RedisBackend, mode=Set):
+    def get(self, key) -> set:
+        return self.data_type.deserialize(self.redis_client.smembers(key))
 
-    def __init__(self, host, port, db, password=None, mode=None):
-        super(RedisBackend, self).__init__(mode)
-        self.redis_client = StrictRedis(host=host, port=port, db=db, password=password)
+    def mget(self, *keys) -> TypingList[set]:
+        return [
+            self.data_type.deserialize(self.redis_client.smembers(key)) for key in keys
+        ]
+
+    def set(self, key, value, ttl: timedelta = None) -> bool:
+        if self.redis_client.exists(key):
+            self.redis_client.delete(key)
+        if ttl:
+            self.redis_client.sadd(key, *self.data_type.serialize(value))
+            return self.redis_client.expire(key, time=ttl)
+        else:
+            return self.redis_client.sadd(key, *self.data_type.serialize(value)) == len(
+                value
+            )
+
+    def add(self, key, *values) -> bool:
+        return self.redis_client.sadd(key, *self.data_type.serialize(values)) == len(
+            values
+        )
+
+    def remove(self, key, *values):
+        return self.redis_client.srem(key, *self.data_type.serialize(values))
+
+    def union(self, *keys):
+        return self.data_type.deserialize(self.redis_client.sunion(keys))
+
+    def intersection(self, *keys):
+        return self.data_type.deserialize(self.redis_client.sinter(keys))
+
+
+class RedisDictBackend(RedisBackend, mode=Dict):
+    ...

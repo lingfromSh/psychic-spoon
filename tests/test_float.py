@@ -35,9 +35,7 @@ def test_float_type_mget(redis_client, score_of_user_cache):
         redis_client.set(f"user:{i + 1}:score", f"{i + 1}.1")
 
     keys = [score_of_user_cache.build_key(user_id=i + 1) for i in range(100)]
-    assert score_of_user_cache.mget(keys=keys) == {
-        f"user:{i + 1}:score": i + 1.1 for i in range(100)
-    }
+    assert score_of_user_cache.mget(*keys) == [i + 1.1 for i in range(100)]
 
 
 def test_float_type_delete(redis_client, score_of_user_cache):
@@ -54,9 +52,9 @@ def test_float_type_delete(redis_client, score_of_user_cache):
     assert redis_client.exists(*raw_keys) == 0
 
 
-def test_float_type_add(redis_client, score_of_user_cache):
+def test_float_type_set(redis_client, score_of_user_cache):
     key = score_of_user_cache.build_key(user_id=1)
-    score_of_user_cache.add(key=key, data=1, ttl=timedelta(seconds=5))
+    score_of_user_cache.set(key=key, value=1, ttl=timedelta(seconds=5))
 
     assert redis_client.get("user:1:score").decode() == "1.0"
     time.sleep(6)  # wait for ttl
@@ -65,7 +63,7 @@ def test_float_type_add(redis_client, score_of_user_cache):
 
 def test_float_type_plus(redis_client, score_of_user_cache):
     key = score_of_user_cache.build_key(user_id=1)
-    score_of_user_cache.add(key=key, data=1.1)
+    score_of_user_cache.set(key=key, value=1.1)
 
     assert redis_client.get("user:1:score").decode() == "1.1"
     score_of_user_cache.plus(key, 10)
@@ -74,7 +72,7 @@ def test_float_type_plus(redis_client, score_of_user_cache):
 
 def test_float_type_subtract(redis_client, score_of_user_cache):
     key = score_of_user_cache.build_key(user_id=1)
-    score_of_user_cache.add(key=key, data=1.1)
+    score_of_user_cache.set(key=key, value=1.1)
 
     assert redis_client.get("user:1:score").decode() == "1.1"
     score_of_user_cache.subtract(key, 10)

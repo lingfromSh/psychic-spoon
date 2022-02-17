@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from functools import partial
 from typing import AnyStr, Callable, List, Union
 
 from .backends.base import Backend
 from .exceptions import KeyPatternError, TTLError
-from .types import BasicDataType
+from .types.base import BaseDataType, ContainerDataType
 
 default_ttl = timedelta(minutes=1)
 
@@ -15,7 +14,7 @@ class Key:
     def __init__(
         self,
         pattern: Union[AnyStr, Callable],
-        data_type: BasicDataType,
+        data_type: Union[BaseDataType, ContainerDataType],
         backend: Backend = None,
         ttl: timedelta = default_ttl,
         on_add_fail_callback_list: List[Callable] = None,
@@ -37,13 +36,16 @@ class Key:
             raise KeyPatternError("pattern must be str or callable.")
         self.pattern = pattern
 
-        if not isinstance(data_type, BasicDataType):
-            raise ValueError("data_type must be type of BasicDataType.")
+        if not isinstance(data_type, (BaseDataType, ContainerDataType)):
+            raise ValueError(
+                "data_type must be type of BasicDataType or ContainerDataType."
+            )
         self.data_type = data_type
 
         if not isinstance(backend, Backend):
             raise ValueError("backend must be type of Backend.")
         self.backend = backend
+        self.backend.ready_for(self.data_type)
 
         if not isinstance(ttl, timedelta):
             raise TTLError("ttl must be type of timedelta.")
@@ -79,8 +81,6 @@ class Key:
             )
         self.on_delete_success_callback_list = on_delete_success_callback_list
 
-        self.data_type.activate(self.backend)
-
     def build_key(self, **key_params):
         if isinstance(self.pattern, str):
             return self.pattern.format(**key_params)
@@ -95,4 +95,4 @@ class Key:
         try:
             return object.__getattribute__(self, name)
         except AttributeError:
-            return partial(getattr(self.data_type, name), self.backend)
+            return getattr(self.backend, name)

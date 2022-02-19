@@ -20,6 +20,7 @@ class RedisBackend(Backend):
         RedisBackend.__registry__.update({kwargs["mode"]: cls})
 
     def get(self, key) -> str:
+        print(self.redis_client.get(key).decode())
         return self.data_type.deserialize(self.redis_client.get(key).decode())
 
     def mget(self, *keys) -> TypingList[str]:

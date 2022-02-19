@@ -25,9 +25,7 @@ class Dict(ContainerDataType):
     def deserialize(self, raw: Union[str, dict]):
         if isinstance(raw, str):
             raw = orjson.loads(raw)
-
         return {
-            k: self.field_mapping[k].deserialize(v)
+            k: self.field_mapping[k].deserialize(v) if k in self.field_mapping else v
             for k, v in raw.items()
-            if k in self.field_mapping
         }

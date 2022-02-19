@@ -25,12 +25,14 @@ def role_ids_of_user_cache():
 
 
 def test_set_type_get(redis_client, role_ids_of_user_cache):
+    redis_client.flushall()
     redis_client.sadd("user:1:roles", 1, 2, 3)
     key = role_ids_of_user_cache.build_key(user_id=1)
     assert role_ids_of_user_cache.get(key) == {1, 2, 3}
 
 
 def test_set_type_mget(redis_client, role_ids_of_user_cache):
+    redis_client.flushall()
     for i in range(100):
         redis_client.sadd(f"user:{i + 1}:roles", *range(i, i + 10))
 

@@ -84,12 +84,10 @@ class RedisListBackend(RedisBackend, mode=List):
         if self.redis_client.exists(key):
             self.redis_client.delete(key)
         if ttl:
-            self.redis_client.rpush(key, *self.data_type.serialize(value))
+            self.redis_client.rpush(key, *value)
             return self.redis_client.expire(key, time=ttl)
         else:
-            return self.redis_client.rpush(
-                key, *self.data_type.serialize(value)
-            ) == len(value)
+            return self.redis_client.rpush(key, *value) == len(value)
 
 
 class RedisSetBackend(RedisBackend, mode=Set):

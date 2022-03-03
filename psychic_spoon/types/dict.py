@@ -5,8 +5,7 @@ from psychic_spoon.types.base import ContainerType, ContainerTypeBuilder, Python
 
 class DictMethodMixin:
     def __init__(self, data):
-        if not isinstance(data, dict):
-            raise ValueError(f"Only accept {dict}")
+        data = self.decode(data)
 
         self._data = {}
         for k, v in data.items():
@@ -40,15 +39,15 @@ class Dict(ContainerTypeBuilder):
                 raise ValueError(f"Only accept subclass of {PythonType}")
         self.fields = fields
 
-    def __call__(self, **kwargs):
-        return self.build_container(**kwargs)
+    def __call__(self, data):
+        return self.build_container(data)
 
-    def build_container(self, **kwargs) -> container_type:
+    def build_container(self, data) -> container_type:
         return type(
             "DictContainer",
             (DictMethodMixin, ContainerType),
             {"fields": self.fields, "type": self.type},
-        )(kwargs)
+        )(data)
 
 
 if __name__ == "__main__":

@@ -40,17 +40,3 @@ class Integer(BasicType):
         if isinstance(other, Integer):
             other = other._data
         return self.data**other
-
-
-if __name__ == "__main__":
-    a = Integer(10)
-    assert a
-    b = Integer(15)
-    assert b
-
-    assert a + b == 25
-    assert a - b == -5
-    assert b - a == 5
-    assert b % a == 5
-    assert b / a == 1.5
-    assert b // a == 1

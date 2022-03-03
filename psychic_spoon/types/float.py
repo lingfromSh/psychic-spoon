@@ -38,17 +38,3 @@ class Float(BasicType):
         if isinstance(other, Float):
             other = other._data
         return self.data**other
-
-
-if __name__ == "__main__":
-    a = Float(1.1)
-    assert a == 1.1
-    b = Float(2.1)
-    assert b == 2.1
-
-    assert a + b == 3.2
-    assert a - b == -1
-    assert b - a == 1
-    assert b % a == 1
-    assert b / a == 2.1 / 1.1
-    assert b // a == 1

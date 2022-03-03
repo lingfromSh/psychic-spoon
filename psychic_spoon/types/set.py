@@ -62,16 +62,3 @@ class Set(ContainerTypeBuilder):
                 "type": self.type,
             },
         )(data)
-
-
-if __name__ == "__main__":
-    from psychic_spoon.types.string import String
-
-    builder = Set(String)
-    s = builder(["1", "2"])
-    s.add("3")
-    assert s == {"1", "2", "3"}
-    s.remove("3")
-    assert s == {"1", "2"}
-    assert s.union(["1", "2", "3"]) == {"1", "2", "3"}
-    assert s.difference(["1"]) == {"2"}

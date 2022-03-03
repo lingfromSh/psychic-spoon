@@ -14,7 +14,12 @@ class RedisBackend(Backend):
     def __init__(self, host, port=6379, db=0, username=None, password=None):
         super(RedisBackend, self).__init__()
         self.client = Redis(
-            host=host, port=port, db=db, username=username, password=password
+            host=host,
+            port=port,
+            db=db,
+            username=username,
+            password=password,
+            decode_responses=True,
         )
 
 
@@ -32,9 +37,6 @@ class RedisStringBackend(RedisBackend):
         if data := self.client.get(key):
             return self.target_type(data)
         return None
-
-    def expire(self, key, ttl: timedelta = None):
-        self.client.expire(key, time=ttl)
 
     def delete(self, *keys):
         self.client.delete(*keys)
@@ -76,12 +78,3 @@ class RedisSetBackend(RedisBackend):
 
     def delete(self, *keys):
         self.client.delete(*keys)
-
-
-if __name__ == "__main__":
-    backend = RedisStringBackend("localhost", port=49153)
-    import inspect
-
-    print(inspect.getfullargspec(backend.get))
-    print(inspect.getfullargspec(backend.set))
-    print(inspect.getfullargspec(backend.expire))

@@ -44,24 +44,3 @@ class List(ContainerTypeBuilder):
                 "type": self.type,
             },
         )(data)
-
-
-if __name__ == "__main__":
-    from psychic_spoon.types.string import String
-
-    builder = List(String)
-    arr = builder(["1", "2"])
-    arr.append(3)
-    assert arr == ["1", "2", "3"]
-    arr.extend([1, 2, 3])
-    assert arr == ["1", "2", "3", "1", "2", "3"]
-    assert arr[0] == "1"
-    arr[0] = 2
-    assert arr[0] == "2"
-    assert arr[:2] == ["2", "2"]
-    arr.remove("2")
-    assert arr == ["2", "3", "1", "2", "3"]
-    assert arr.pop() == "3"
-    assert arr == ["2", "3", "1", "2"]
-    assert len(arr) == 4
-    assert "2" in arr

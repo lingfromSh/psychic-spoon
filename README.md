@@ -95,5 +95,4 @@ user_dict = user_session_cache.get(key)
 
 - [ ] An event loop to handling success/failure callback
 - [ ] Replace pottery with RedisBackend
-- [ ] A method mapping layer between Backend and Type
-- [ ] Flexible mapping type and backend
+- [ ] More support to redis model

@@ -12,6 +12,8 @@ def redis_client():
 
 
 def test_redis_string_backend(redis_client):
+    from datetime import timedelta
+
     from psychic_spoon.backends.redis_backend import RedisStringBackend
     from psychic_spoon.types.boolean import Boolean
     from psychic_spoon.types.dict import Dict
@@ -106,3 +108,38 @@ def test_redis_string_backend(redis_client):
     assert set(orjson.loads(redis_client.get("paid"))) == {4, 5, 6}
     k.delete(key)
     assert redis_client.exists("paid") == 0
+
+    user_session_cache = Key(
+        "user:{id}:session",
+        datatype=Dict(
+            username=String,
+            name=String,
+            age=Integer,
+            roles=Set(Integer),
+            ip_address=Dict(type=String, address=String),
+        ),
+        backend=backend,
+        ttl=timedelta(hours=12),
+    )
+
+    key = user_session_cache.build_key(id=1)
+    user_dict = {
+        "username": "jame-curtis",
+        "name": "James Curtis",
+        "age": 26,
+        "roles": {15, 82, 81},
+        "ip_address": {"type": "ipv4", "address": "192.168.1.1"},
+    }
+
+    # Save your cache
+    user_session_cache.set(key, user_dict)
+
+    # Fetch your cache
+    user_dict = user_session_cache.get(key)
+    assert user_dict == {
+        "username": "jame-curtis",
+        "name": "James Curtis",
+        "age": 26,
+        "roles": {15, 82, 81},
+        "ip_address": {"type": "ipv4", "address": "192.168.1.1"},
+    }

@@ -1,7 +1,7 @@
-from orjson import JSONDecodeError, loads
+from orjson import JSONDecodeError
 
 from psychic_spoon.converter.base import Converter
-from psychic_spoon.utils import singledispatch
+from psychic_spoon.utils import loads, singledispatch
 
 
 class DictConverter(Converter):

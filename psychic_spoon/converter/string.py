@@ -1,7 +1,5 @@
-from orjson import dumps
-
 from psychic_spoon.converter.base import Converter
-from psychic_spoon.utils import singledispatch
+from psychic_spoon.utils import dumps, singledispatch
 
 
 class StringConverter(Converter):
@@ -28,7 +26,7 @@ class StringConverter(Converter):
     @convert.register(set)
     @convert.register(tuple)
     def _(self, raw) -> type:
-        return dumps(list(raw)).decode(encoding="utf8")
+        return dumps(raw).decode(encoding="utf8")
 
     @convert.register(list)
     @convert.register(dict)

@@ -2,6 +2,8 @@ from abc import get_cache_token
 from functools import update_wrapper
 from inspect import ismethod
 
+import orjson
+
 
 def singledispatch(func):
     """
@@ -91,3 +93,15 @@ def singledispatch(func):
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper
+
+
+def dumps(data):
+    def _default(obj):
+        if isinstance(obj, (set, tuple)):
+            return list(obj)
+        raise TypeError
+
+    return orjson.dumps(data, default=_default)
+
+
+loads = orjson.loads

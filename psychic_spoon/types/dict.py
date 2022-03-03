@@ -11,7 +11,11 @@ class DictMethodMixin:
         for k, v in data.items():
             if k not in self.fields:
                 raise ValueError(f"Got unexpected key: {k}")
-            self._data[k] = self.fields[k].decode(v)
+
+            if isinstance(self.fields[k], ContainerTypeBuilder):
+                self._data[k] = self.fields[k](v)
+            else:
+                self._data[k] = self.fields[k].decode(v)
 
     def __getitem__(self, item):
         return self.fields[item].decode(self.data[item])
@@ -50,15 +54,3 @@ class Dict(ContainerTypeBuilder):
             (DictMethodMixin, ContainerType),
             {"fields": self.fields, "type": self.type},
         )(data)
-
-
-if __name__ == "__main__":
-    from psychic_spoon.types.integer import Integer
-    from psychic_spoon.types.string import String
-
-    builder = Dict(name=String, age=Integer)
-    d = builder(name="ling", age=11)
-    assert d == {"name": "ling", "age": 11}
-    d.update(name="wang")
-    assert d == {"name": "wang", "age": 11}
-    assert d["name"] == "wang"

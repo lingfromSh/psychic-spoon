@@ -35,7 +35,9 @@ class Dict(ContainerTypeBuilder):
 
     def __init__(self, **fields):
         for field in fields.values():
-            if not issubclass(field, PythonType):
+            if not isinstance(field, ContainerTypeBuilder) and not issubclass(
+                field, PythonType
+            ):
                 raise ValueError(f"Only accept subclass of {PythonType}")
         self.fields = fields
 

@@ -62,13 +62,29 @@ def test_redis_string_backend(redis_client):
     assert redis_client.exists(key) == 0
 
     redis_client.set("user:1", orjson.dumps({"username": "Ling", "age": 26}))
-    k = Key("user:{id}", datatype=Dict(username=String, age=Integer), backend=backend)
+    k = Key(
+        "user:{id}",
+        datatype=Dict(
+            username=String,
+            age=Integer,
+            ipaddress=Dict(is_ipv4=Boolean, address=String),
+        ),
+        backend=backend,
+    )
     key = k.build_key(id=1)
     assert k.get(key) == {"username": "Ling", "age": 26}
-    k.set(key, {"username": "StephenLing", "age": 30})
+    k.set(
+        key,
+        {
+            "username": "StephenLing",
+            "age": 30,
+            "ipaddress": {"is_ipv4": True, "address": "192.168.1.1"},
+        },
+    )
     assert orjson.loads(redis_client.get("user:1")) == {
         "username": "StephenLing",
         "age": 30,
+        "ipaddress": {"is_ipv4": True, "address": "192.168.1.1"},
     }
     k.delete(key)
     assert redis_client.exists("user:1") == 0

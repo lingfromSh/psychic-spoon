@@ -4,48 +4,91 @@
 
 Cache key management always is a tough task during developing.
 
-For example, we need a redis string to store a user's session dict.
+Cache a data may involve generating keys, converting data to right struct, assigning expiration, converting raw to
+proper python type and handling failures.
+
+The purpose of `Psychic Spoon` is to keep your plenty of cache keys clear.
+
+## Concepts
+
+In KV databases, a key is used as the unique identification to access the value. In practice, keys with the same pattern
+are generally designed as a kind of data with the same structure. And Various KV databases almost are same.
+
+Therefore, `Psychic Spoon` provides:
+
+1. a key object to describe key's pattern and data structure.
+2. a type object to describe data in python.
+3. a backend object to describe how data in python to store in database.
+
+### Key
 
 ```python
-# Set one user's session
-session_key_pattern = "user:{id}:session"
-session_expiration = 60 * 60 * 12  # 12 hours
-
-user_dict = {
-    "id": "1eaf0dfc-a324-45c0-8545-1d77260273a2",
-    "name": ,
-    "age": int
-}
-redis.set(session_key_pattern.format(id= < user_id >), json.dumps(user_dict), ex = session_expiration)
-
-# Get one user's session
-if json_string_session := redis.get(session_key_pattern.format(id= < user_id >)):
-    session = json.dumps(json_string_session)
-else:
-    session = None
+from psychic_spoon.key import Key
 ```
 
-From this example code, a cache key may involving generating keys, converting data to right struct, assigning
-expiration, converting raw to proper python type and handling failures.
+### Type
 
-So `Psychic Spoon` 's purpose is to keep your plenty of cache keys clear.
+- Boolean
+- Dict (support nested)
+- Float
+- Integer
+- List (support nested)
+- Set  (support nested)
+- String
+
+### Backend
+
+- RedisBackend
+    - RedisStringBackend
+    - RedisSetBackend
 
 ## Usage
 
-```python
-user_session_key = Key("user:{id}:session",
-                       data_type=Dict(),
-                       backend=RedisBackend(...),
-                       ttl=timedelta(hours=12))
+For example, we need a redis string to store a user's session dict.
 
-key = user_session_key.build_key(id=1)
+```python
+from datetime import timedelta
+from psychic_spoon.key import Key
+from psychic_spoon.types.dict import Dict
+from psychic_spoon.types.integer import Integer
+from psychic_spoon.types.set import Set
+from psychic_spoon.types.string import String
+from psychic_spoon.backends.redis_backend import RedisStringBackend
+
+backend = RedisStringBackend(host="localhost", port=6379)
+
+user_session_cache = Key("user:{id}:session",
+                         datatype=Dict(
+                             username=String,
+                             name=String,
+                             age=Integer,
+                             roles=Set(Integer),
+                             ip_address=Dict(
+                                 type=String,
+                                 address=String
+                             )
+                         ),
+                         backend=backend,
+                         ttl=timedelta(hours=12))
+
+key = user_session_cache.build_key(id=1)
 user_dict = {
-    "id": xxx,
-    "name": xxx,
-    "last_login": xxx
+    "username": "jame-curtis",
+    "name": "James Curtis",
+    "age": 26,
+    "roles": {15, 82, 81},
+    "ip_address": {
+        "type": "ipv4",
+        "address": "192.168.1.1"
+    }
 }
-user_session_key.set(key, user_dict)
-user_dict = user_session_key.get(key)
+
+# Save your cache
+user_session_cache.set(key, user_dict)
+
+# Fetch your cache
+user_dict = user_session_cache.get(key)
+
 ```
 
 ## Roadmap

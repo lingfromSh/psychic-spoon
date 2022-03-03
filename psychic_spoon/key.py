@@ -118,7 +118,11 @@ class Key:
 if __name__ == "__main__":
 
     def main():
-        from psychic_spoon.backends.redis_backend import RedisStringBackend
+        from psychic_spoon.backends.redis_backend import (
+            RedisSetBackend,
+            RedisStringBackend,
+        )
+        from psychic_spoon.types.integer import Integer
         from psychic_spoon.types.set import Set
         from psychic_spoon.types.string import String
 
@@ -134,12 +138,21 @@ if __name__ == "__main__":
         print(k.get(key))
         assert k.get(key)
 
-        k = Key("user:{id}:roles", datatype=Set(String), backend=backend)
+        k = Key("user:{id}:roles", datatype=Set(Integer), backend=backend)
         key = k.build_key(id=1)
         print(key)
         assert key == "user:1:roles"
         k.set(key, {1, 2, 3})
         print(k.get(key))
-        assert k.get(key) == {"1", "2", "3"}
+        assert k.get(key) == {1, 2, 3}
+
+        backend = RedisSetBackend("localhost", port=49153)
+        k = Key("user:{id}:perms", datatype=Set(Integer), backend=backend)
+        key = k.build_key(id=1)
+        print(key)
+        assert key == "user:1:perms"
+        k.set(key, {1, 2, 3})
+        print(k.get(key))
+        assert k.get(key) == {1, 2, 3}
 
     main()

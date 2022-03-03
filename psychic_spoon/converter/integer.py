@@ -15,6 +15,10 @@ class IntegerConverter(Converter):
     def _(self, raw) -> type:
         return raw
 
+    @convert.register(bytes)
+    def _(self, raw) -> type:
+        return int(raw.decode(encoding="utf8"))
+
     @convert.register(str)
     @convert.register(float)
     @convert.register(bool)

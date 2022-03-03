@@ -64,4 +64,4 @@ jobs:
         run: pip install -r requirements/test.txt
 
       - name: Run tests
-        run: pytest --cov psychic_spoon --pretty .
+        run: pytest --cov psychic_spoon .
